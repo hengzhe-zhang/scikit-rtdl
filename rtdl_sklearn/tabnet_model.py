@@ -3,11 +3,16 @@ from pytorch_tabnet import tab_model
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from typing import Dict
 
 
 class TabNetRegressor(tab_model.TabNetRegressor):
     max_epochs: int = 200
     verbose: int = 0
+    optimizer_params: Dict = dict(lr=1e-3)
+    mask_type: str = 'entmax'
+    n_independent = 1
+    n_shared = 1
 
     def fit(self, X_train, y_train, eval_set=None, eval_name=None, eval_metric=None, loss_fn=None, weights=0,
             max_epochs=None, patience=10, batch_size=1024, virtual_batch_size=128, num_workers=0, drop_last=False,
