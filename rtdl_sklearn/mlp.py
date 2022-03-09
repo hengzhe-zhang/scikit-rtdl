@@ -18,6 +18,15 @@ class MLP(nn.Module):
             d_embedding: int,
             feature_index: Tuple,
     ) -> None:
+        """
+        :param d_in: Number of numerical features
+        :param d_layers: Number of neurons in each layer
+        :param dropout: Dropout ratio
+        :param d_out: Number of output features
+        :param categories: Number of categorical features
+        :param d_embedding: Size of categorical embeddings
+        :param feature_index: Number of numerical features and categorical features
+        """
         super().__init__()
 
         if categories is not None:

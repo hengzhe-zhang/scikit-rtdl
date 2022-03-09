@@ -59,6 +59,20 @@ class ResNet(nn.Module):
             d_out: int,
             feature_index: Tuple,
     ) -> None:
+        """
+        :param d_numerical: Number of numerical features
+        :param categories: Number of categorical features
+        :param d_embedding: Size of categorical embeddings
+        :param d: Hidden layer size
+        :param d_hidden_factor: Hidden layer size
+        :param n_layers: Number of layers
+        :param activation: Activation function
+        :param normalization: Name of normalization layer
+        :param hidden_dropout: Dropout ratio of hidden layer
+        :param residual_dropout: Dropout ratio of residual layer
+        :param d_out: Number of output features
+        :param feature_index: Number of numerical features and categorical features
+        """
         super().__init__()
 
         def make_normalization():

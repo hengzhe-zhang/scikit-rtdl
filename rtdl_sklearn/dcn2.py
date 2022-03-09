@@ -34,6 +34,19 @@ class DCNv2(nn.Module):
             d_embedding: int,
             feature_index: Tuple,
     ) -> None:
+        """
+        :param d_in: Number of numerical features
+        :param d: Hidden layer size
+        :param n_hidden_layers: Number of deep layers
+        :param n_cross_layers: Number of cross layers
+        :param hidden_dropout: Dropout ratio of hidden layer
+        :param cross_dropout: Dropout ratio of cross layer
+        :param d_out: Number of output features
+        :param stacked: Stacking cross layer on the top of hidden layer
+        :param categories: Number of categorical features
+        :param d_embedding: Size of categorical embeddings
+        :param feature_index: Number of numerical features and categorical features
+        """
         super().__init__()
 
         if categories is not None:
