@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 from skorch.callbacks import EarlyStopping
 from torch.nn import CrossEntropyLoss
+from typing import Union
 
 from .dcn2 import DCNv2
 from .ft_transformer import FTTransformer
@@ -32,7 +33,7 @@ class MLPBase(BaseEstimator):
     def __init__(self, patience=10):
         self.x_transformer = None
         self.y_transformer = None
-        self.net = None
+        self.net: Union[NeuralNetRegressor, NeuralNetClassifier] = None
         self.patience = patience
 
     def data_preprocess(self, X, y):
@@ -56,6 +57,10 @@ class MLPBase(BaseEstimator):
             x_cat_cardinalities = None
         return x, y, x_num_dim, x_cat_dim, x_cat_cardinalities
 
+    def predict_proba(self, X):
+        # Ensure weights are float numbers
+        return np.nan_to_num(self.net.predict_proba(X.astype(np.float32)), posinf=0, neginf=0)
+
     def predict(self, X):
         x = self.x_transformer.transform(X).astype(np.float32)
         x = np.nan_to_num(x)
@@ -72,12 +77,13 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
                  prenormalization=True, initialization='kaiming', learning_rate=1e-4, weight_decay=1e-5):
         super().__init__()
         self.n_blocks = n_blocks
-        self.d_token = d_token
+        # The number of tokens must be a multiple of the number of heads
+        self.d_token = int(d_token)
         self.attention_dropout = attention_dropout
         self.ffn_dropout = ffn_dropout
         self.residual_dropout = residual_dropout
         self.token_bias = token_bias
-        self.n_layers = n_layers
+        self.n_layers = int(n_layers)
         self.n_heads = n_heads
         self.d_ffn_factor = d_ffn_factor
         self.activation = activation
@@ -87,6 +93,7 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
         self.weight_decay = weight_decay
 
     def fit(self, X, y):
+        self.d_token = int((self.d_token // self.n_heads) * self.n_heads)
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = FTTransformer(
             d_numerical=len(x_num_dim),
@@ -128,8 +135,8 @@ class MLPRegressor(MLPBase):
                  categorical_embedding_size=8,
                  learning_rate=1e-4, weight_decay=1e-5):
         super().__init__()
-        self.layers = layers
-        self.layer_size = layer_size
+        self.layers = int(layers)
+        self.layer_size = int(layer_size)
         self.d_layers = [int(layer_size), ] * int(layers)
         self.dropout = dropout
         self.categorical_embedding_size = int(categorical_embedding_size)
@@ -258,6 +265,7 @@ class ResNetRegressor(MLPBase):
 class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
 
     def fit(self, X, y):
+        self.d_token = int((self.d_token // self.n_heads) * self.n_heads)
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = FTTransformer(
             d_numerical=len(x_num_dim),

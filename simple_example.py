@@ -18,14 +18,19 @@ all_score = []
 for data in [load_iris]:
     X, y = data(return_X_y=True)
     # for model_func in [FTTransformerRegressor, ResNetRegressor, DCNV2Regressor, MLPRegressor]:
-    # for model_func in [FTTransformerClassifier, ResNetClassifier, DCNV2Classifier, MLPClassifier]:
-    for model_func in [TabNetClassifier]:
+    for model_func in [
+        FTTransformerClassifier,
+        ResNetClassifier,
+        DCNV2Classifier,
+        MLPClassifier
+    ]:
+        # for model_func in [TabNetClassifier]:
         # for model_func in [MLPClassifier]:
         # for model_func in [XGBClassifier, LGBMClassifier]:
         model = model_func()
         st = time.time()
-        # score = cross_val_score(model, np.array(X), np.array(y), n_jobs=-1)
-        score = cross_val_score(model, np.array(X), np.array(y))
+        score = cross_val_score(model, np.array(X), np.array(y), n_jobs=-1)
+        # score = cross_val_score(model, np.array(X), np.array(y))
         cost_time = time.time() - st
         score_ = (data.__name__, model_func.__name__, np.mean(score), cost_time)
         # score_ = (data, model_func.__name__, np.mean(score))
