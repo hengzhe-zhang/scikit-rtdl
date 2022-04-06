@@ -1,12 +1,13 @@
+from typing import Union
+
 import numpy as np
 import torch.optim
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OrdinalEncoder
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 from skorch.callbacks import EarlyStopping
 from torch.nn import CrossEntropyLoss
-from typing import Union
 
 from .dcn2 import DCNv2
 from .ft_transformer import FTTransformer
@@ -23,10 +24,19 @@ def get_categorical_feature_index(x, threshold=5):
         count = len(np.unique(x[:, k]))
         if count <= threshold:
             x_cat_dim.append(k)
-            x_cat_cardinalities.append(count)
+            x_cat_cardinalities.append(count + 1)
         else:
             x_num_dim.append(k)
     return x_num_dim, x_cat_dim, x_cat_cardinalities
+
+
+class AdvancedOrdinalEncoder(OrdinalEncoder):
+    def transform(self, X):
+        data = super().transform(X)
+        for c in range(data.shape[1]):
+            c_data = data[:, c]
+            c_data[c_data == -1] = 0
+        return data
 
 
 class MLPBase(BaseEstimator):
@@ -42,8 +52,7 @@ class MLPBase(BaseEstimator):
             y = y.astype(np.float32)
         x_num_dim, x_cat_dim, x_cat_cardinalities = get_categorical_feature_index(X, threshold=5)
         x_transformer = ColumnTransformer(
-            [('cat_cols', OrdinalEncoder(handle_unknown='use_encoded_value',
-                                         unknown_value=np.nan), x_cat_dim),
+            [('cat_cols', AdvancedOrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1), x_cat_dim),
              ('num_cols', StandardScaler(), x_num_dim)])
         self.x_transformer = x_transformer
         x = x_transformer.fit_transform(x).astype(np.float32)
@@ -51,6 +60,9 @@ class MLPBase(BaseEstimator):
             y_transformer = StandardScaler()
             self.y_transformer = y_transformer
             y = y_transformer.fit_transform(np.reshape(y, (-1, 1)))
+        else:
+            self.y_transformer = LabelEncoder()
+            y = self.y_transformer.fit_transform(y)
         x_cat_dim = [i for i in range(len(x_cat_dim))]
         x_num_dim = [i for i in range(len(x_cat_dim), len(x_cat_dim) + len(x_num_dim))]
         if len(x_cat_cardinalities) == 0:
@@ -59,15 +71,18 @@ class MLPBase(BaseEstimator):
 
     def predict_proba(self, X):
         # Ensure weights are float numbers
-        return np.nan_to_num(self.net.predict_proba(X.astype(np.float32)), posinf=0, neginf=0)
+        x = self.x_transformer.transform(X).astype(np.float32)
+        proba = np.nan_to_num(self.net.predict_proba(x), posinf=0, neginf=0)
+        # Ensure the sum of weight is one
+        eps = 1e-5
+        zero_row = proba.sum(axis=1) < eps
+        proba[zero_row] = 1 / X.shape[1]
+        assert np.all(proba.sum(axis=1) > (1 - eps)), f'probability {proba.sum(axis=1)}'
+        return proba
 
     def predict(self, X):
         x = self.x_transformer.transform(X).astype(np.float32)
-        x = np.nan_to_num(x)
-        if not isinstance(self, ClassifierMixin):
-            y = self.y_transformer.inverse_transform(self.net.predict(x))
-        else:
-            y = self.net.predict(x)
+        y = self.y_transformer.inverse_transform(self.net.predict(x))
         return np.nan_to_num(y, posinf=0, neginf=0)
 
 

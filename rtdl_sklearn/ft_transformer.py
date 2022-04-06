@@ -64,7 +64,6 @@ class Tokenizer(nn.Module):
             self.register_buffer('category_offsets', category_offsets)
             self.category_embeddings = nn.Embedding(sum(categories), d_token)
             nn_init.kaiming_uniform_(self.category_embeddings.weight, a=math.sqrt(5))
-            print(f'{self.category_embeddings.weight.shape=}')
 
         # take [CLS] token into account
         self.weight = nn.Parameter(Tensor(d_numerical + 1, d_token))

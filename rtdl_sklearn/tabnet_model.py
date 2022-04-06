@@ -55,6 +55,8 @@ class TabNetClassifier(ClassifierMixin, tab_model.TabNetClassifier):
         self.verbose = False
         max_epochs = self.max_epochs
         assert max_epochs > 0
+        if eval_metric is None:
+            eval_metric = ['logloss']
 
         self.x_transformer = StandardScaler()
         X_train = self.x_transformer.fit_transform(X_train)
