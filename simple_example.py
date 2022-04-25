@@ -29,8 +29,8 @@ for data in [load_iris]:
         # for model_func in [XGBClassifier, LGBMClassifier]:
         model = model_func()
         st = time.time()
-        score = cross_val_score(model, np.array(X), np.array(y), n_jobs=-1)
-        # score = cross_val_score(model, np.array(X), np.array(y))
+        # score = cross_val_score(model, np.array(X), np.array(y), n_jobs=-1)
+        score = cross_val_score(model, np.array(X), np.array(y))
         cost_time = time.time() - st
         score_ = (data.__name__, model_func.__name__, np.mean(score), cost_time)
         # score_ = (data, model_func.__name__, np.mean(score))

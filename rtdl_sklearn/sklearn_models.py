@@ -4,6 +4,7 @@ import numpy as np
 import torch.optim
 from sklearn.base import BaseEstimator, RegressorMixin, ClassifierMixin
 from sklearn.compose import ColumnTransformer
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OrdinalEncoder
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 from skorch.callbacks import EarlyStopping
@@ -75,8 +76,11 @@ class MLPBase(BaseEstimator):
         proba = np.nan_to_num(self.net.predict_proba(x), posinf=0, neginf=0)
         # Ensure the sum of weight is one
         eps = 1e-5
+        # If all probabilities values are nan, then use uniform probability to impute them
         zero_row = proba.sum(axis=1) < eps
         proba[zero_row] = 1 / X.shape[1]
+        # Normalize all probabilities because the sum of probabilities may not be one after dealing nan values
+        proba = proba / proba.sum(axis=1).reshape(-1, 1)
         assert np.all(proba.sum(axis=1) > (1 - eps)), f'probability {proba.sum(axis=1)}'
         return proba
 
@@ -280,6 +284,10 @@ class ResNetRegressor(MLPBase):
 class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
 
     def fit(self, X, y):
+        if X.shape[1] > 100:
+            # reduce dimensionality if more than 100 features
+            self.pca = PCA(n_components=100)
+            X = self.pca.fit_transform(X)
         self.d_token = int((self.d_token // self.n_heads) * self.n_heads)
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = FTTransformer(
@@ -313,6 +321,14 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
         )
         self.net = net
         net.fit(x, y)
+
+    def predict_proba(self, X):
+        X = self.pca.transform(X)
+        return super().predict_proba(X)
+
+    def predict(self, X):
+        X = self.pca.transform(X)
+        return super().predict(X)
 
 
 class ResNetClassifier(ClassifierMixin, ResNetRegressor):
