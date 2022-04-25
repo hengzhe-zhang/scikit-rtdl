@@ -323,11 +323,13 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
         net.fit(x, y)
 
     def predict_proba(self, X):
-        X = self.pca.transform(X)
+        if X.shape[1] > 100:
+            X = self.pca.transform(X)
         return super().predict_proba(X)
 
     def predict(self, X):
-        X = self.pca.transform(X)
+        if X.shape[1] > 100:
+            X = self.pca.transform(X)
         return super().predict(X)
 
 
