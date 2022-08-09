@@ -41,11 +41,12 @@ class AdvancedOrdinalEncoder(OrdinalEncoder):
 
 
 class MLPBase(BaseEstimator):
-    def __init__(self, patience=10):
+    def __init__(self, patience=10, max_epochs=200):
         self.x_transformer = None
         self.y_transformer = None
         self.net: Union[NeuralNetRegressor, NeuralNetClassifier] = None
         self.patience = patience
+        self.max_epochs = max_epochs
 
     def data_preprocess(self, X, y):
         x = X.astype(np.float32)
@@ -135,7 +136,7 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
         )
         net = NeuralNetRegressor(
             model,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -144,6 +145,7 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class MLPRegressor(MLPBase):
@@ -175,7 +177,7 @@ class MLPRegressor(MLPBase):
         )
         net = NeuralNetRegressor(
             model,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -184,6 +186,7 @@ class MLPRegressor(MLPBase):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class DCNV2Regressor(MLPBase):
@@ -222,7 +225,7 @@ class DCNV2Regressor(MLPBase):
         )
         net = NeuralNetRegressor(
             model,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -231,6 +234,7 @@ class DCNV2Regressor(MLPBase):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class ResNetRegressor(MLPBase):
@@ -270,7 +274,7 @@ class ResNetRegressor(MLPBase):
         )
         net = NeuralNetRegressor(
             model,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -279,6 +283,7 @@ class ResNetRegressor(MLPBase):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
@@ -312,7 +317,7 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
         net = NeuralNetClassifier(
             model,
             criterion=CrossEntropyLoss,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -321,6 +326,7 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
     def predict_proba(self, X):
         if X.shape[1] > 100:
@@ -354,7 +360,7 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
         net = NeuralNetClassifier(
             model,
             criterion=CrossEntropyLoss,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -363,6 +369,7 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
@@ -385,7 +392,7 @@ class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
         net = NeuralNetClassifier(
             model,
             criterion=CrossEntropyLoss,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -394,6 +401,7 @@ class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
         )
         self.net = net
         net.fit(x, y)
+        return self
 
 
 class MLPClassifier(ClassifierMixin, MLPRegressor):
@@ -412,7 +420,7 @@ class MLPClassifier(ClassifierMixin, MLPRegressor):
         net = NeuralNetClassifier(
             model,
             criterion=CrossEntropyLoss,
-            max_epochs=200,
+            max_epochs=self.max_epochs,
             lr=self.learning_rate,
             optimizer=torch.optim.Adam,
             callbacks=[EarlyStopping(patience=self.patience)],
@@ -421,3 +429,4 @@ class MLPClassifier(ClassifierMixin, MLPRegressor):
         )
         self.net = net
         net.fit(x, y)
+        return self

@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import torch
 from lightgbm import LGBMClassifier
 from sklearn.datasets import load_boston, load_iris
 from sklearn.model_selection import cross_val_score
@@ -11,6 +12,7 @@ from rtdl_sklearn.sklearn_models import MLPRegressor, FTTransformerRegressor, Re
     FTTransformerClassifier, ResNetClassifier, DCNV2Classifier, MLPClassifier
 from rtdl_sklearn.tabnet_model import TabNetClassifier
 
+torch.set_num_threads(1)
 pd.set_option('display.max_columns', None)
 
 all_score = []
@@ -27,7 +29,7 @@ for data in [load_iris]:
         # for model_func in [TabNetClassifier]:
         # for model_func in [MLPClassifier]:
         # for model_func in [XGBClassifier, LGBMClassifier]:
-        model = model_func()
+        model = model_func(learning_rate=1e-2)
         st = time.time()
         # score = cross_val_score(model, np.array(X), np.array(y), n_jobs=-1)
         score = cross_val_score(model, np.array(X), np.array(y))
