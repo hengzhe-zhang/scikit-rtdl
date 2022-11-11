@@ -94,8 +94,9 @@ class MLPBase(BaseEstimator):
 class FTTransformerRegressor(RegressorMixin, MLPBase):
     def __init__(self, n_blocks=3, d_token=192, attention_dropout=0.2, ffn_dropout=0.1, residual_dropout=0,
                  token_bias=False, n_layers=3, n_heads=8, d_ffn_factor=4 / 3, activation='reglu',
-                 prenormalization=True, initialization='kaiming', learning_rate=1e-4, weight_decay=1e-5):
-        super().__init__()
+                 prenormalization=True, initialization='kaiming', learning_rate=1e-4, weight_decay=1e-5,
+                 patience=10, max_epochs=200):
+        super().__init__(patience=patience, max_epochs=max_epochs)
         self.n_blocks = n_blocks
         # The number of tokens must be a multiple of the number of heads
         self.d_token = int(d_token)
@@ -138,7 +139,7 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
             model,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -154,8 +155,9 @@ class MLPRegressor(MLPBase):
                  layer_size=32,
                  dropout=0,
                  categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5):
-        super().__init__()
+                 learning_rate=1e-4, weight_decay=1e-5,
+                 patience=10, max_epochs=200):
+        super().__init__(patience=patience, max_epochs=max_epochs)
         self.layers = int(layers)
         self.layer_size = int(layer_size)
         self.d_layers = [int(layer_size), ] * int(layers)
@@ -179,7 +181,7 @@ class MLPRegressor(MLPBase):
             model,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -197,8 +199,9 @@ class DCNV2Regressor(MLPBase):
                  hidden_dropout=0,
                  cross_dropout=0,
                  categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5):
-        super().__init__()
+                 learning_rate=1e-4, weight_decay=1e-5,
+                 patience=10, max_epochs=200):
+        super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.cross_layers = int(cross_layers)
         self.hidden_layers = int(hidden_layers)
@@ -227,7 +230,7 @@ class DCNV2Regressor(MLPBase):
             model,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -245,8 +248,9 @@ class ResNetRegressor(MLPBase):
                  hidden_dropout=0,
                  residual_dropout=0,
                  categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5):
-        super().__init__()
+                 learning_rate=1e-4, weight_decay=1e-5,
+                 patience=10, max_epochs=200):
+        super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.d_hidden_factor = d_hidden_factor
         self.hidden_layers = int(hidden_layers)
@@ -276,7 +280,7 @@ class ResNetRegressor(MLPBase):
             model,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -319,7 +323,7 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
             criterion=CrossEntropyLoss,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -362,7 +366,7 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
             criterion=CrossEntropyLoss,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -394,7 +398,7 @@ class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
             criterion=CrossEntropyLoss,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
@@ -422,7 +426,7 @@ class MLPClassifier(ClassifierMixin, MLPRegressor):
             criterion=CrossEntropyLoss,
             max_epochs=self.max_epochs,
             lr=self.learning_rate,
-            optimizer=torch.optim.Adam,
+            optimizer=torch.optim.AdamW,
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
