@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 from lightgbm import LGBMClassifier
-from sklearn.datasets import load_boston, load_iris
+from sklearn.datasets import load_diabetes, load_iris
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBClassifier
 
@@ -16,7 +16,7 @@ torch.set_num_threads(1)
 pd.set_option('display.max_columns', None)
 
 all_score = []
-# for data in [load_boston]:
+# for data in [load_diabetes]:
 for data in [load_iris]:
     X, y = data(return_X_y=True)
     # for model_func in [FTTransformerRegressor, ResNetRegressor, DCNV2Regressor, MLPRegressor]:
