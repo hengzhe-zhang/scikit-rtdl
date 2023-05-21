@@ -41,7 +41,7 @@ class AdvancedOrdinalEncoder(OrdinalEncoder):
 
 
 class MLPBase(BaseEstimator):
-    def __init__(self, patience=10, max_epochs=200):
+    def __init__(self, patience=10, max_epochs=1000):
         self.x_transformer = None
         self.y_transformer = None
         self.net: Union[NeuralNetRegressor, NeuralNetClassifier] = None
@@ -95,7 +95,7 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
     def __init__(self, n_blocks=3, d_token=192, attention_dropout=0.2, ffn_dropout=0.1, residual_dropout=0,
                  token_bias=False, n_layers=3, n_heads=8, d_ffn_factor=4 / 3, activation='reglu',
                  prenormalization=True, initialization='kaiming', learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=200):
+                 patience=10, max_epochs=1000):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.n_blocks = n_blocks
         # The number of tokens must be a multiple of the number of heads
@@ -156,7 +156,7 @@ class MLPRegressor(MLPBase):
                  dropout=0,
                  categorical_embedding_size=8,
                  learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=200):
+                 patience=10, max_epochs=1000):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layers = int(layers)
         self.layer_size = int(layer_size)
@@ -200,7 +200,7 @@ class DCNV2Regressor(MLPBase):
                  cross_dropout=0,
                  categorical_embedding_size=8,
                  learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=200):
+                 patience=10, max_epochs=1000):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.cross_layers = int(cross_layers)
@@ -249,7 +249,7 @@ class ResNetRegressor(MLPBase):
                  residual_dropout=0,
                  categorical_embedding_size=8,
                  learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=200):
+                 patience=10, max_epochs=1000):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.d_hidden_factor = d_hidden_factor
