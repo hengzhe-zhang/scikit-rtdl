@@ -52,10 +52,21 @@ class MLPBase(BaseEstimator):
         x = X.astype(np.float32)
         if not isinstance(self, ClassifierMixin):
             y = y.astype(np.float32)
-        x_num_dim, x_cat_dim, x_cat_cardinalities = get_categorical_feature_index(X, threshold=5)
+        x_num_dim, x_cat_dim, x_cat_cardinalities = get_categorical_feature_index(
+            X, threshold=5
+        )
         x_transformer = ColumnTransformer(
-            [('cat_cols', AdvancedOrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1), x_cat_dim),
-             ('num_cols', StandardScaler(), x_num_dim)])
+            [
+                (
+                    "cat_cols",
+                    AdvancedOrdinalEncoder(
+                        handle_unknown="use_encoded_value", unknown_value=-1
+                    ),
+                    x_cat_dim,
+                ),
+                ("num_cols", StandardScaler(), x_num_dim),
+            ]
+        )
         self.x_transformer = x_transformer
         x = x_transformer.fit_transform(x).astype(np.float32)
         if not isinstance(self, ClassifierMixin):
@@ -82,7 +93,7 @@ class MLPBase(BaseEstimator):
         proba[zero_row] = 1 / X.shape[1]
         # Normalize all probabilities because the sum of probabilities may not be one after dealing nan values
         proba = proba / proba.sum(axis=1).reshape(-1, 1)
-        assert np.all(proba.sum(axis=1) > (1 - eps)), f'probability {proba.sum(axis=1)}'
+        assert np.all(proba.sum(axis=1) > (1 - eps)), f"probability {proba.sum(axis=1)}"
         return proba
 
     def predict(self, X):
@@ -92,10 +103,25 @@ class MLPBase(BaseEstimator):
 
 
 class FTTransformerRegressor(RegressorMixin, MLPBase):
-    def __init__(self, n_blocks=3, d_token=192, attention_dropout=0.2, ffn_dropout=0.1, residual_dropout=0,
-                 token_bias=False, n_layers=3, n_heads=8, d_ffn_factor=4 / 3, activation='reglu',
-                 prenormalization=True, initialization='kaiming', learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=1000):
+    def __init__(
+        self,
+        n_blocks=3,
+        d_token=192,
+        attention_dropout=0.2,
+        ffn_dropout=0.1,
+        residual_dropout=0,
+        token_bias=False,
+        n_layers=3,
+        n_heads=8,
+        d_ffn_factor=4 / 3,
+        activation="reglu",
+        prenormalization=True,
+        initialization="kaiming",
+        learning_rate=1e-4,
+        weight_decay=1e-5,
+        patience=10,
+        max_epochs=1000,
+    ):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.n_blocks = n_blocks
         # The number of tokens must be a multiple of the number of heads
@@ -143,6 +169,8 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -150,17 +178,23 @@ class FTTransformerRegressor(RegressorMixin, MLPBase):
 
 
 class MLPRegressor(MLPBase):
-    def __init__(self,
-                 layers=2,
-                 layer_size=32,
-                 dropout=0,
-                 categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=1000):
+    def __init__(
+        self,
+        layers=2,
+        layer_size=32,
+        dropout=0,
+        categorical_embedding_size=8,
+        learning_rate=1e-4,
+        weight_decay=1e-5,
+        patience=10,
+        max_epochs=1000,
+    ):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layers = int(layers)
         self.layer_size = int(layer_size)
-        self.d_layers = [int(layer_size), ] * int(layers)
+        self.d_layers = [
+            int(layer_size),
+        ] * int(layers)
         self.dropout = dropout
         self.categorical_embedding_size = int(categorical_embedding_size)
         self.learning_rate = learning_rate
@@ -185,6 +219,8 @@ class MLPRegressor(MLPBase):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -192,15 +228,19 @@ class MLPRegressor(MLPBase):
 
 
 class DCNV2Regressor(MLPBase):
-    def __init__(self,
-                 cross_layers=2,
-                 hidden_layers=2,
-                 layer_size=32,
-                 hidden_dropout=0,
-                 cross_dropout=0,
-                 categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=1000):
+    def __init__(
+        self,
+        cross_layers=2,
+        hidden_layers=2,
+        layer_size=32,
+        hidden_dropout=0,
+        cross_dropout=0,
+        categorical_embedding_size=8,
+        learning_rate=1e-4,
+        weight_decay=1e-5,
+        patience=10,
+        max_epochs=1000,
+    ):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.cross_layers = int(cross_layers)
@@ -234,6 +274,8 @@ class DCNV2Regressor(MLPBase):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -241,15 +283,19 @@ class DCNV2Regressor(MLPBase):
 
 
 class ResNetRegressor(MLPBase):
-    def __init__(self,
-                 hidden_layers=2,
-                 layer_size=32,
-                 d_hidden_factor=1,
-                 hidden_dropout=0,
-                 residual_dropout=0,
-                 categorical_embedding_size=8,
-                 learning_rate=1e-4, weight_decay=1e-5,
-                 patience=10, max_epochs=1000):
+    def __init__(
+        self,
+        hidden_layers=2,
+        layer_size=32,
+        d_hidden_factor=1,
+        hidden_dropout=0,
+        residual_dropout=0,
+        categorical_embedding_size=8,
+        learning_rate=1e-4,
+        weight_decay=1e-5,
+        patience=10,
+        max_epochs=1000,
+    ):
         super().__init__(patience=patience, max_epochs=max_epochs)
         self.layer_size = int(layer_size)
         self.d_hidden_factor = d_hidden_factor
@@ -269,8 +315,8 @@ class ResNetRegressor(MLPBase):
             d=self.layer_size,
             d_hidden_factor=self.d_hidden_factor,
             n_layers=self.hidden_layers,
-            activation='reglu',
-            normalization='batchnorm',
+            activation="reglu",
+            normalization="batchnorm",
             hidden_dropout=self.hidden_dropout,
             residual_dropout=self.residual_dropout,
             d_out=1,
@@ -284,6 +330,8 @@ class ResNetRegressor(MLPBase):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -291,7 +339,6 @@ class ResNetRegressor(MLPBase):
 
 
 class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
-
     def fit(self, X, y):
         if X.shape[1] > 100:
             # reduce dimensionality if more than 100 features
@@ -327,6 +374,8 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -344,7 +393,6 @@ class FTTransformerClassifier(ClassifierMixin, FTTransformerRegressor):
 
 
 class ResNetClassifier(ClassifierMixin, ResNetRegressor):
-
     def fit(self, X, y):
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = ResNet(
@@ -354,8 +402,8 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
             d=self.layer_size,
             d_hidden_factor=self.d_hidden_factor,
             n_layers=self.hidden_layers,
-            activation='reglu',
-            normalization='batchnorm',
+            activation="reglu",
+            normalization="batchnorm",
             hidden_dropout=self.hidden_dropout,
             residual_dropout=self.residual_dropout,
             d_out=len(np.unique(y)),
@@ -370,6 +418,8 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -377,7 +427,6 @@ class ResNetClassifier(ClassifierMixin, ResNetRegressor):
 
 
 class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
-
     def fit(self, X, y):
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = DCNv2(
@@ -402,6 +451,8 @@ class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
@@ -409,7 +460,6 @@ class DCNV2Classifier(ClassifierMixin, DCNV2Regressor):
 
 
 class MLPClassifier(ClassifierMixin, MLPRegressor):
-
     def fit(self, X, y):
         x, y, x_num_dim, x_cat_dim, x_cat_cardinalities = self.data_preprocess(X, y)
         model = MLP(
@@ -430,6 +480,8 @@ class MLPClassifier(ClassifierMixin, MLPRegressor):
             callbacks=[EarlyStopping(patience=self.patience)],
             verbose=False,
             optimizer__weight_decay=self.weight_decay,
+            iterator_train__shuffle=True,
+            iterator_train__drop_last=True,
         )
         self.net = net
         net.fit(x, y)
